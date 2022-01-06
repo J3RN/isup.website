@@ -1,0 +1,16 @@
+name = "isup"
+version = "0.1.0"
+
+licences = ["Apache-2.0"]
+description = "A simple web application to check if a given website is up or not."
+repository = { type = "github", user = "J3RN", repo = "isup.website" }
+links = [{ title = "Website", href = "https://isup.website" }]
+
+[dependencies]
+gleam_stdlib = "~> 0.18"
+gleam_erlang = "~> 0.6"
+gleam_elli = "~> 0.5"
+gleam_hackney = "~> 0.1"
+
+[dev-dependencies]
+gleeunit = "~> 0.5"
