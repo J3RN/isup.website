@@ -7,8 +7,9 @@ import gleam/http.{Get, Post, Request, Response}
 import gleam/bit_builder.{BitBuilder}
 import gleam/bit_string
 import gleam/option.{None, Option, Some}
-import gleam/result.{map, then}
+import gleam/result.{map, then, unwrap}
 import gleam/string
+import gleam/int
 import gleam/io
 import gleam/uri.{Uri}
 
@@ -19,8 +20,16 @@ type Status {
 }
 
 pub fn main() {
-  elli.start(endpoint, on_port: 3000)
-  io.println("Listening on https://localhost:3000")
+  let port =
+    get_env("PORT")
+    |> then(int.parse)
+    |> unwrap(3000)
+
+  elli.start(endpoint, on_port: port)
+  io.println(string.append(
+    "Listening on https://localhost:",
+    int.to_string(port),
+  ))
   erlang.sleep_forever()
 }
 
@@ -153,3 +162,7 @@ fn html_response(status, content) {
   |> http.set_resp_body(body)
   |> Ok()
 }
+
+// Replace when `env.get` makes it into gleam/erlang
+external fn get_env(name: String) -> Result(String, Nil) =
+  "gleam_env" "get"
