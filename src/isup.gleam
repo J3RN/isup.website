@@ -8,7 +8,7 @@ import gleam/http.{Get, Post, Request, Response}
 import gleam/bit_builder.{BitBuilder}
 import gleam/bit_string
 import gleam/option.{None, Option, Some}
-import gleam/result.{map, then, unwrap}
+import gleam/result.{then, unwrap}
 import gleam/string
 import gleam/int
 import gleam/io
@@ -26,12 +26,16 @@ pub fn main() {
     |> then(int.parse)
     |> unwrap(3000)
 
-  elli.start(endpoint, on_port: port)
-  io.println(string.append(
-    "Listening on https://localhost:",
-    int.to_string(port),
-  ))
-  erlang.sleep_forever()
+  case elli.start(endpoint, on_port: port) {
+    Ok(_) -> {
+      io.println(string.append(
+        "Listening on https://localhost:",
+        int.to_string(port),
+      ))
+      erlang.sleep_forever()
+    }
+    Error(_) -> io.println("Failed to start server. Exiting.")
+  }
 }
 
 fn endpoint(req: Request(BitString)) -> Response(BitBuilder) {
