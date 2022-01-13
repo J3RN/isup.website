@@ -1,6 +1,7 @@
 // External
 import gleam/hackney
 import gleam/erlang
+import gleam/erlang/os
 import gleam/http/elli
 import gleam/http.{Get, Post, Request, Response}
 // Stdlib
@@ -21,7 +22,7 @@ type Status {
 
 pub fn main() {
   let port =
-    get_env("PORT")
+    os.get_env("PORT")
     |> then(int.parse)
     |> unwrap(3000)
 
@@ -162,7 +163,3 @@ fn html_response(status, content) {
   |> http.set_resp_body(body)
   |> Ok()
 }
-
-// Replace when `env.get` makes it into gleam/erlang
-external fn get_env(name: String) -> Result(String, Nil) =
-  "gleam_env" "get"
