@@ -126,9 +126,12 @@ fn lookup(req) {
   |> html_response(200, _)
 }
 
-// TODO: uri.parse considers URIs such as "j3rn.com" to be completely path
-// Also accepts raw words like "cat" as above
 pub fn extract_host(host) {
+  let host = case bit_string.from_string(host) {
+    <<"http":utf8, _:bit_string>> -> host
+    _ -> string.append("https://", host)
+  }
+
   case uri.parse(host) {
     Ok(Uri(host: Some(host), ..)) -> Ok(host)
     _ -> Error(Nil)
