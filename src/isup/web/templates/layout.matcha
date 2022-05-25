@@ -1,0 +1,16 @@
+{> with template as String
+
+<html>
+  <head>
+    <title>Is it up?</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    {{ template }}
+
+    <form method='post' action='/lookup'>
+      <input type="text" name="url" placeholder="https://gleam.run" />
+      <button>Check</button>
+    </form>
+  </body>
+</html>

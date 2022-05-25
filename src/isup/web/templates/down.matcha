@@ -1,0 +1,4 @@
+{> with url as String
+
+<h1>{{url}} is down!</h1>
+<p>Try another</p>

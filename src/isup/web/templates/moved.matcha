@@ -1,0 +1,16 @@
+{> import gleam/option
+
+{> with url as String
+{> with new_location as option.Option(String)
+
+{% if option.is_some(new_location) %}
+  <h1>{{url}} has been moved to {{option.unwrap(new_location, "")}}</h1>
+  <form method='post' action="/lookup">
+    <input type="hidden" name="url" value='{{option.unwrap(new_location, "")}}' />
+    <button>Try {{option.unwrap(new_location, "")}}</button>
+  </form>
+{% else %}
+  <h1>{{url}} has been moved</h1>
+  <h2>However, the server did not specify <i>where</i></h2>
+{% endif %}
+<p>Try another</p>

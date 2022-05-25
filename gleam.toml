@@ -11,6 +11,7 @@ gleam_stdlib = "~> 0.19"
 gleam_erlang = "~> 0.7"
 gleam_elli = "~> 0.5"
 gleam_hackney = "~> 0.1"
+gleam_otp = "~> 0.3"
 
 [dev-dependencies]
 gleeunit = "~> 0.6"

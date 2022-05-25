@@ -1,24 +1,15 @@
 // External
-import gleam/hackney
 import gleam/erlang
 import gleam/erlang/os
 import gleam/http/elli
-import gleam/http.{Get, Post, Request, Response}
+import gleam/otp/supervisor
 // Stdlib
-import gleam/bit_builder.{BitBuilder}
-import gleam/bit_string
-import gleam/option.{None, Option, Some}
-import gleam/result.{then, unwrap}
-import gleam/string
 import gleam/int
 import gleam/io
-import gleam/uri.{Uri}
-
-type Status {
-  Up
-  Moved(new_url: Option(String))
-  Down
-}
+import gleam/result.{then, unwrap}
+import gleam/string
+// Application
+import isup/web/endpoint
 
 pub fn main() {
   let port =
@@ -26,7 +17,7 @@ pub fn main() {
     |> then(int.parse)
     |> unwrap(3000)
 
-  case elli.start(endpoint, on_port: port) {
+  case start_supervision(port) {
     Ok(_) -> {
       io.println(string.append(
         "Listening on https://localhost:",
@@ -38,135 +29,11 @@ pub fn main() {
   }
 }
 
-fn endpoint(req: Request(BitString)) -> Response(BitBuilder) {
-  case router(req) {
-    Ok(resp) -> resp
-    Error(_) -> {
-      let message = bit_builder.from_string("Internal Server Error")
-      http.response(500)
-      |> http.set_resp_body(message)
-    }
-  }
-}
-
-fn router(req) -> Result(Response(BitBuilder), Nil) {
-  case req {
-    Request(method: Get, path: "/", ..) -> index(req)
-    Request(method: Post, path: "/lookup", ..) -> lookup(req)
-    _ -> not_found(req)
-  }
-}
-
-fn index(_req) {
-  "
-  <html>
-    <head>
-      <meta charset=\"utf-8\">
-    </head>
-    <body>
-      <h1>Is it up?</h1>
-      <form method='post' action='/lookup'>
-        <input type=\"text\" name=\"url\" placeholder=\"https://gleam.run\" />
-        <button>Check</button>
-      </form>
-    </body>
-  </html>
-  "
-  |> html_response(200, _)
-}
-
-fn lookup(req) {
-  try body_string = bit_string.to_string(req.body)
-  try host =
-    case string.split(body_string, "=") {
-      ["url", host] -> Ok(host)
-      _ -> Error(Nil)
-    }
-    |> then(uri.percent_decode)
-    |> then(extract_host)
-
-  case is_up(host) {
-    Up ->
-      "
-      <html>
-        <head>
-          <meta charset=\"utf-8\">
-        </head>
-        <body>
-          <h1>It is up!</h1>
-          <a href=\"/\">← Try again</a>
-        </body>
-      </html>
-      "
-    Moved(_uri) ->
-      "
-      <html>
-        <head>
-          <meta charset=\"utf-8\">
-        </head>
-        <body>
-          <h1>The page has been moved!</h1>
-          <a href=\"/\">← Try again</a>
-        </body>
-      </html>
-      "
-    Down ->
-      "
-      <html>
-        <head>
-          <meta charset=\"utf-8\">
-        </head>
-        <body>
-          <h1>It is down!</h1>
-          <a href=\"/\">← Try again</a>
-        </body>
-      </html>
-      "
-  }
-  |> html_response(200, _)
-}
-
-pub fn extract_host(host) {
-  let host = case bit_string.from_string(host) {
-    <<"http":utf8, _:bit_string>> -> host
-    _ -> string.append("https://", host)
-  }
-
-  case uri.parse(host) {
-    Ok(Uri(host: Some(host), ..)) -> Ok(host)
-    _ -> Error(Nil)
-  }
-}
-
-fn not_found(_req) {
-  "
-  <html>
-    <body>
-      <h1>You're lost!</h1>
-    </body>
-  </html>
-  "
-  |> html_response(404, _)
-}
-
-fn is_up(host) {
-  let req =
-    http.default_req()
-    |> http.set_host(host)
-
-  case hackney.send(req) {
-    Ok(Response(status: 200, ..)) -> Up
-    Ok(Response(status: status, ..)) if status >= 300 && status < 400 ->
-      Moved(None)
-    Error(_) -> Down
-  }
-}
-
-fn html_response(status, content) {
-  let body = bit_builder.from_string(content)
-
-  http.response(status)
-  |> http.prepend_resp_header("Content-Type", "text/html")
-  |> http.set_resp_body(body)
-  |> Ok()
+fn start_supervision(port) {
+  supervisor.start(fn(children) {
+    supervisor.add(
+      children,
+      supervisor.worker(fn(_arg) { elli.start(endpoint.handle, on_port: port) }),
+    )
+  })
 }
