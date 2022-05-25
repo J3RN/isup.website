@@ -1,4 +1,4 @@
-FROM ghcr.io/gleam-lang/gleam:v0.19.0-erlang as builder
+FROM ghcr.io/gleam-lang/gleam:v0.21.0-erlang-alpine as builder
 
 WORKDIR /app
 
