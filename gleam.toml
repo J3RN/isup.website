@@ -7,9 +7,10 @@ repository = { type = "github", user = "J3RN", repo = "isup.website" }
 links = [{ title = "Website", href = "https://isup.website" }]
 
 [dependencies]
-gleam_stdlib = "~> 0.19"
+gleam_stdlib = "~> 0.21"
 gleam_erlang = "~> 0.7"
-gleam_elli = "~> 0.5"
+gleam_http = "~> 3.0"
+mist = "~> 0.4"
 gleam_hackney = "~> 0.1"
 gleam_otp = "~> 0.3"
 

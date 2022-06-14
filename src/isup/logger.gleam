@@ -1,4 +1,5 @@
-import gleam/http.{Request}
+import gleam/http
+import gleam/http/request.{Request}
 import gleam/io
 import gleam/option.{None, Some}
 import gleam/string

@@ -1,8 +1,8 @@
 // External
 import gleam/erlang
 import gleam/erlang/os
-import gleam/http/elli
 import gleam/otp/supervisor
+import mist
 // Stdlib
 import gleam/int
 import gleam/io
@@ -33,7 +33,7 @@ fn start_supervision(port) {
   supervisor.start(fn(children) {
     supervisor.add(
       children,
-      supervisor.worker(fn(_arg) { elli.start(endpoint.handle, on_port: port) }),
+      supervisor.worker(fn(_arg) { mist.run_service(port, endpoint.handle) }),
     )
   })
 }

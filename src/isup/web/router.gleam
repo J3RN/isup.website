@@ -6,7 +6,9 @@
 //// two.
 
 // External
-import gleam/http.{Get, Post, Request, Response}
+import gleam/http.{Get, Post}
+import gleam/http/request.{Request}
+import gleam/http/response.{Response}
 // Stdlib
 import gleam/bit_builder.{BitBuilder}
 import gleam/bit_string
@@ -76,7 +78,7 @@ fn html_response(status, content) {
     layout.render(template: content)
     |> bit_builder.from_string()
 
-  http.response(status)
-  |> http.prepend_resp_header("Content-Type", "text/html")
-  |> http.set_resp_body(body)
+  response.new(status)
+  |> response.prepend_header("Content-Type", "text/html")
+  |> response.set_body(body)
 }

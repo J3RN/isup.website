@@ -1,10 +1,10 @@
 // External
 import gleam/hackney
-import gleam/http.{Response}
+import gleam/http/request
+import gleam/http/response.{Response}
 // Stdlib
 import gleam/bit_string
 import gleam/list
-import gleam/io
 import gleam/option.{None, Option, Some}
 import gleam/result
 import gleam/string
@@ -35,8 +35,8 @@ fn extract_host(host) {
 
 fn is_up(host) {
   let req =
-    http.default_req()
-    |> http.set_host(host)
+    request.new()
+    |> request.set_host(host)
 
   case hackney.send(req) {
     Ok(Response(status: 200, ..)) -> Up

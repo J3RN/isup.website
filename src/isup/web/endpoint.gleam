@@ -1,5 +1,6 @@
 // External
-import gleam/http.{Request, Response}
+import gleam/http/request.{Request}
+import gleam/http/response.{Response}
 // Stdlib
 import gleam/bit_builder.{BitBuilder}
 // Application
