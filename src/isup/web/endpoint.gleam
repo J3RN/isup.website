@@ -1,12 +1,11 @@
 // External
-import gleam/http.{Request, Response}
-// Stdlib
-import gleam/bit_builder.{BitBuilder}
+import wisp.{type Request, type Response}
+
 // Application
-import isup/logger
 import isup/web/router
 
-pub fn handle(req: Request(BitString)) -> Response(BitBuilder) {
-  logger.log(req)
+pub fn handle(req: Request) -> Response {
+  use <- wisp.log_request(req)
+  use <- wisp.rescue_crashes
   router.route(req)
 }

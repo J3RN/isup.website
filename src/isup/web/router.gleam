@@ -6,15 +6,17 @@
 //// two.
 
 // External
-import gleam/http.{Get, Post, Request, Response}
+import wisp.{type Request, type Response}
+
 // Stdlib
-import gleam/bit_builder.{BitBuilder}
-import gleam/bit_string
-import gleam/result.{then}
+import gleam/bit_array
+import gleam/result.{try}
 import gleam/string
 import gleam/uri
+
 // Application
 import isup/checker.{Down, Moved, Up}
+
 // Templates
 import isup/web/templates/down
 import isup/web/templates/fail
@@ -24,59 +26,58 @@ import isup/web/templates/moved
 import isup/web/templates/not_found
 import isup/web/templates/success
 
-pub fn route(req: Request(BitString)) -> Response(BitBuilder) {
-  case req {
-    Request(method: Get, path: "/", ..) -> index(req)
-    Request(method: Post, path: "/lookup", ..) -> lookup(req)
+pub fn route(req: Request) -> Response {
+  case wisp.path_segments(req) {
+    [] -> index(req)
+    ["lookup"] -> lookup(req)
     _ -> not_found(req)
   }
 }
 
 fn index(_req) {
   form.render()
-  |> html_response(200, _)
+  |> html_response(200)
 }
 
-fn lookup(req) {
+fn lookup(req: Request) -> Response {
   let host =
-    bit_string.to_string(req.body)
-    |> then(get_host)
-    |> then(uri.percent_decode)
+    req
+    |> wisp.read_body_bits()
+    |> try(bit_array.to_string)
+    |> try(uri.percent_decode)
+    |> try(get_host)
 
   case host {
     Ok(host) -> check(host)
-    Error(_) -> html_response(400, fail.render())
+    Error(Nil) -> html_response(fail.render(), 400)
   }
 }
 
 fn check(host) {
+  wisp.log_info("Checking: " <> host)
   case checker.lookup(host) {
-    Ok(Up) -> html_response(200, success.render(url: host))
+    Ok(Up) -> html_response(success.render(url: host), 200)
     Ok(Moved(new_url)) ->
-      html_response(200, moved.render(url: host, new_location: new_url))
-    Ok(Down) -> html_response(200, down.render(url: host))
-    Error(_) -> html_response(400, fail.render())
+      html_response(moved.render(url: host, new_location: new_url), 200)
+    Ok(Down) -> html_response(down.render(url: host), 200)
+    Error(_) -> html_response(fail.render(), 400)
   }
 }
 
 fn get_host(body_string) {
-  case string.split(body_string, "=") {
-    ["url", host] -> Ok(host)
+  case string.split_once(body_string, on: "=") {
+    Ok(#("url", host)) -> Ok(host)
     _ -> Error(Nil)
   }
 }
 
 fn not_found(_req) {
   not_found.render()
-  |> html_response(404, _)
+  |> html_response(404)
 }
 
-fn html_response(status, content) {
-  let body =
-    layout.render(template: content)
-    |> bit_builder.from_string()
-
-  http.response(status)
-  |> http.prepend_resp_header("Content-Type", "text/html")
-  |> http.set_resp_body(body)
+fn html_response(content, status) {
+  content
+  |> layout.render()
+  |> wisp.html_response(status)
 }

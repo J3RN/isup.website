@@ -1,13 +1,13 @@
 // External
 import gleam/hackney
-import gleam/http.{Response}
+import gleam/http/request
+import gleam/http/response.{Response}
+
 // Stdlib
-import gleam/bit_string
+import gleam/bit_array
 import gleam/list
-import gleam/io
-import gleam/option.{None, Option, Some}
+import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleam/string
 import gleam/uri.{Uri}
 
 pub type Status {
@@ -17,34 +17,37 @@ pub type Status {
 }
 
 pub fn lookup(url: String) -> Result(Status, Nil) {
-  extract_host(url)
+  url
+  |> extract_host
   |> result.map(is_up)
 }
 
 fn extract_host(host) {
-  let host = case bit_string.from_string(host) {
-    <<"http":utf8, _:bit_string>> -> host
-    _ -> string.append("https://", host)
+  let host = case bit_array.from_string(host) {
+    <<"http":utf8, _:bits>> -> host
+    _ -> "https://" <> host
   }
 
   case uri.parse(host) {
-    Ok(Uri(host: Some(host), ..)) -> Ok(host)
+    Ok(Uri(scheme: Some(scheme), host: Some(host), ..)) ->
+      Ok(scheme <> "://" <> host)
+    Ok(Uri(scheme: None, host: Some(host), ..)) -> Ok("https://" <> host)
     _ -> Error(Nil)
   }
 }
 
 fn is_up(host) {
-  let req =
-    http.default_req()
-    |> http.set_host(host)
+  let assert Ok(req) = request.to(host)
 
   case hackney.send(req) {
     Ok(Response(status: 200, ..)) -> Up
-    Ok(Response(status: status, headers: headers, ..)) if status >= 300 && status < 400 ->
+    Ok(Response(status: status, headers: headers, ..))
+      if status >= 300 && status < 400
+    ->
       case list.find(headers, fn(header) { header.0 == "location" }) {
         Ok(header) -> Moved(Some(header.1))
         Error(Nil) -> Moved(None)
       }
-    Error(_) -> Down
+    _ -> Down
   }
 }
